@@ -1,6 +1,6 @@
 # 🌀 PatternLang Compiler
 
-### *A Mini-Compiler in Python for PatternLang — An Arithmetic Pattern Generation Language*
+### _A Mini-Compiler in Python for PatternLang — An Arithmetic Pattern Generation Language_
 
 ---
 
@@ -25,9 +25,9 @@ PatternLang is intentionally minimalistic, making it perfect for learning compil
 
 This compiler was developed as a semester project for **Compiler Construction**.
 
-* **Faizan Ali — 22i-2496**
-* **Hamail Rehman — 22k-4443**
-* **Sameed Rehman — 22k-xxxx**
+- **Faizan Ali — 22i-2496**
+- **Hamail Rehman — 22k-4443**
+- **Sameed Rehman — 22k-xxxx**
 
 ---
 
@@ -35,11 +35,11 @@ This compiler was developed as a semester project for **Compiler Construction**.
 
 PatternLang is a small scripting language designed for:
 
-* Arithmetic pattern generation
-* Simple looping
-* Declarative variable definitions
-* Printing results
-* Basic conditional jumps
+- Arithmetic pattern generation
+- Simple looping
+- Declarative variable definitions
+- Printing results
+- Basic conditional jumps
 
 A sample PatternLang program to print the Fibonacci sequence looks like this:
 
@@ -66,35 +66,35 @@ The project is structured according to standard compiler pipeline design:
 
 ### **1. Lexical Analysis**
 
-* Converts source code into tokens
-* Handles identifiers, numbers, operators, and keywords
+- Converts source code into tokens
+- Handles identifiers, numbers, operators, and keywords
 
 ### **2. Syntax Analysis**
 
-* Implements a recursive-descent parser
-* Builds an Abstract Syntax Tree (AST)
+- Implements a recursive-descent parser
+- Builds an Abstract Syntax Tree (AST)
 
 ### **3. Semantic Analysis**
 
-* Constructs a symbol table
-* Ensures variables are declared before use
-* Enforces PatternLang's integer-only type system
+- Constructs a symbol table
+- Ensures variables are declared before use
+- Enforces PatternLang's integer-only type system
 
 ### **4. Intermediate Representation (IR)**
 
-* Generates three-address code (3AC)
-* Includes temporary variables, labels, and jumps
+- Generates three-address code (3AC)
+- Includes temporary variables, labels, and jumps
 
 ### **5. Optimization**
 
-* Constant folding
-* Simple algebraic simplifications
-* Dead-code elimination when possible
+- Constant folding
+- Simple algebraic simplifications
+- Dead-code elimination when possible
 
 ### **6. Code Generation / Interpreter**
 
-* Executes the IR on a simple Python-based virtual machine
-* Produces the output required by the PatternLang program
+- Executes the IR on a simple Python-based virtual machine
+- Produces the output required by the PatternLang program
 
 ---
 
@@ -131,14 +131,24 @@ COPILOT_INSTRUCTIONS.md
 
 Install dependencies (if any):
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
 Run a PatternLang program:
 
+```bash
+# Basic execution
+python main.py tests/sample1.pl
+
+# Show all compiler phases (verbose mode)
+python main.py tests/sample1.pl --verbose
 ```
-python main.py samples/fibonacci.pl
+
+Run all test programs:
+
+```bash
+python tests/run_tests.py
 ```
 
 ---
@@ -147,10 +157,10 @@ python main.py samples/fibonacci.pl
 
 PatternLang can generate a wide variety of arithmetic sequences such as:
 
-* Fibonacci
-* Triangular numbers
-* Factorial-based patterns
-* Custom linear and non-linear progressions
+- Fibonacci
+- Triangular numbers
+- Factorial-based patterns
+- Custom linear and non-linear progressions
 
 ---
 
@@ -158,10 +168,10 @@ PatternLang can generate a wide variety of arithmetic sequences such as:
 
 This project is intended to:
 
-* Demonstrate practical implementation of compiler phases
-* Show how simple languages are designed
-* Provide hands-on understanding of parsing, IR, and interpretation
-* Serve as a clean, minimal compiler framework for students
+- Demonstrate practical implementation of compiler phases
+- Show how simple languages are designed
+- Provide hands-on understanding of parsing, IR, and interpretation
+- Serve as a clean, minimal compiler framework for students
 
 ---
 

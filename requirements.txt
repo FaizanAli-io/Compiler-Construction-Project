@@ -1,0 +1,2 @@
+# No external dependencies required
+# PatternLang compiler uses only Python standard library
