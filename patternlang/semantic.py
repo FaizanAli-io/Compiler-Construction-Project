@@ -124,3 +124,46 @@ class SemanticAnalyzer:
     def visit_Number(self, node):
         """Visit number literal (always valid)."""
         pass
+
+    def visit_FunctionDef(self, node):
+        """Register function and check its body in a new scope."""
+        # Functions share global namespace for names; record name to prevent duplicates
+        if not hasattr(self, "functions"):
+            self.functions = {}
+        if node.name in self.functions:
+            self.errors.append(SemanticError(f"Function '{node.name}' redeclared"))
+        else:
+            self.functions[node.name] = node
+        # Enter function scope
+        self.symbol_table.enter_scope()
+        # Declare parameters
+        for p in node.params:
+            if not self.symbol_table.declare(p, "int"):
+                self.errors.append(SemanticError(f"Parameter '{p}' redeclared"))
+        # Visit body
+        for stmt in node.body:
+            self.visit(stmt)
+        # Exit scope
+        self.symbol_table.exit_scope()
+
+    def visit_Return(self, node):
+        """Validate return expression."""
+        self.visit(node.expression)
+
+    def visit_Call(self, node):
+        """Validate call arguments (assume function exists for now)."""
+        # Verify function exists if registry available and arity matches
+        if hasattr(self, "functions") and node.name in self.functions:
+            func = self.functions[node.name]
+            if len(node.args) != len(func.params):
+                self.errors.append(
+                    SemanticError(
+                        f"Function '{node.name}' expects {len(func.params)} argument(s), got {len(node.args)}"
+                    )
+                )
+        for arg in node.args:
+            self.visit(arg)
+
+    def visit_Label(self, node):
+        """Label statement - no validation needed."""
+        pass

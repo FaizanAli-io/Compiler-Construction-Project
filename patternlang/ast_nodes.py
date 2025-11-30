@@ -78,6 +78,16 @@ class Print(ASTNode):
         return f"Print({self.expression})"
 
 
+class Label(ASTNode):
+    """Label marker: label_name:"""
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return f"Label({self.name})"
+
+
 class BinaryOp(ASTNode):
     """Binary operation: left op right"""
 
@@ -108,3 +118,36 @@ class Number(ASTNode):
 
     def __repr__(self):
         return f"Number({self.value})"
+
+
+class FunctionDef(ASTNode):
+    """Function definition: func name(param1, param2) { stmt_list }"""
+
+    def __init__(self, name, params, body):
+        self.name = name
+        self.params = params  # list of parameter names
+        self.body = body  # list of statements
+
+    def __repr__(self):
+        return f"FunctionDef({self.name}, params={self.params}, body={self.body})"
+
+
+class Return(ASTNode):
+    """Return statement: return expr;"""
+
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __repr__(self):
+        return f"Return({self.expression})"
+
+
+class Call(ASTNode):
+    """Function call: name(arg1, arg2);"""
+
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return f"Call({self.name}, args={self.args})"

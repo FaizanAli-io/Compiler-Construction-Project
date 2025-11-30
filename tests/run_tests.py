@@ -40,10 +40,10 @@ def run_test(test_file):
 def main():
     """Run all tests."""
     tests_dir = Path(__file__).parent
-    test_files = sorted(tests_dir.glob("sample*.pl"))
+    test_files = sorted(tests_dir.glob("*.pl"))
 
     if not test_files:
-        print("No test files found (sample*.pl)")
+        print("No test files found (*.pl)")
         sys.exit(1)
 
     print("=" * 70)

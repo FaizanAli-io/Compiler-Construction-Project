@@ -15,6 +15,8 @@ class TokenType(Enum):
     IN = auto()
     PRINT = auto()
     IF = auto()
+    RETURN = auto()
+    FUNC = auto()
     GOTO = auto()
     END = auto()
 
@@ -49,6 +51,7 @@ class TokenType(Enum):
     # Special
     EOF = auto()
     NEWLINE = auto()
+    COLON = auto()
 
 
 class Token:
@@ -78,4 +81,6 @@ KEYWORDS = {
     "if": TokenType.IF,
     "goto": TokenType.GOTO,
     "end": TokenType.END,
+    "return": TokenType.RETURN,
+    "func": TokenType.FUNC,
 }

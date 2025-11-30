@@ -81,6 +81,7 @@ class IRGenerator:
         """Visit program node."""
         for stmt in node.statements:
             self.visit(stmt)
+        # Ensure a program-end label for potential main flow
 
     def visit_VarDecl(self, node):
         """
@@ -158,6 +159,49 @@ class IRGenerator:
         """Visit print statement."""
         expr_result = self.visit(node.expression)
         self.emit("print", expr_result, None, None)
+
+    def visit_FunctionDef(self, node):
+        """
+        Emit function label and its body.
+        Conventions:
+        - Label: func_<name>
+        - Parameters are loaded from argument stack by interpreter
+        - Function should end with implicit return 0 if no explicit return
+        """
+        func_label = f"func_{node.name}"
+        self.emit("label", None, None, func_label)
+        # Bind parameters from argument stack: a = _args[0], etc.
+        for idx, name in enumerate(node.params):
+            self.emit("assign", f"_args[{idx}]", None, name)
+        for stmt in node.body:
+            self.visit(stmt)
+        # Implicit return 0
+        self.emit("ret", "0", None, None)
+
+    def visit_Return(self, node):
+        val = self.visit(node.expression)
+        self.emit("ret", val, None, None)
+
+    def visit_Call(self, node):
+        """
+        Emit call sequence using push/call/getret.
+        Returns a temp holding the return value.
+        """
+        # Push args in order
+        for arg in node.args:
+            arg_val = self.visit(arg)
+            self.emit("push", arg_val, None, None)
+        # Call target with arg count for interpreter
+        target = f"func_{node.name}"
+        self.emit("call", target, len(node.args), None)
+        # Retrieve return value into temp
+        ret_temp = self.new_temp()
+        self.emit("getret", None, None, ret_temp)
+        return ret_temp
+
+    def visit_Label(self, node):
+        """Emit user-defined label."""
+        self.emit("label", None, None, node.name)
 
     def visit_BinaryOp(self, node):
         """

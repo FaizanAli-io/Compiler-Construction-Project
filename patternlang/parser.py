@@ -79,6 +79,30 @@ class Parser:
             return self.if_stmt()
         elif self.current_token.type == TokenType.PRINT:
             return self.print_stmt()
+        elif self.current_token.type == TokenType.FUNC:
+            return self.func_def()
+        elif self.current_token.type == TokenType.IDENTIFIER:
+            # Could be a label (IDENT ':') or function call: IDENT '(' args ')' ';'
+            # Lookahead: if next is COLON, parse label; if LPAREN, parse call
+            saved_token = self.current_token
+            # We need to peek next token safely
+            next_tok = (
+                self.tokens[self.position + 1]
+                if self.position + 1 < len(self.tokens)
+                else None
+            )
+            if next_tok and next_tok.type == TokenType.COLON:
+                return self.label_stmt()
+            elif next_tok and next_tok.type == TokenType.LPAREN:
+                return self.call_stmt()
+            else:
+                raise ParseError(
+                    f"Unexpected identifier '{self.current_token.value}'",
+                    self.current_token.line,
+                    self.current_token.column,
+                )
+        elif self.current_token.type == TokenType.RETURN:
+            return self.return_stmt()
         else:
             raise ParseError(
                 f"Unexpected token {self.current_token.type.name}",
@@ -107,6 +131,60 @@ class Parser:
         body = self.stmt_list()
         self.expect(TokenType.RBRACE)
         return Repeat(var_name, start_expr, end_expr, body)
+
+    def func_def(self):
+        """func_def ::= 'func' IDENT '(' [param_list] ')' '{' stmt_list '}'"""
+        self.expect(TokenType.FUNC)
+        name = self.expect(TokenType.IDENTIFIER).value
+        self.expect(TokenType.LPAREN)
+        params = []
+        if self.current_token.type != TokenType.RPAREN:
+            params = self.param_list()
+        self.expect(TokenType.RPAREN)
+        self.expect(TokenType.LBRACE)
+        body = self.stmt_list()
+        self.expect(TokenType.RBRACE)
+        return FunctionDef(name, params, body)
+
+    def param_list(self):
+        """param_list ::= IDENT { ',' IDENT }"""
+        params = [self.expect(TokenType.IDENTIFIER).value]
+        while self.current_token.type == TokenType.COMMA:
+            self.advance()
+            params.append(self.expect(TokenType.IDENTIFIER).value)
+        return params
+
+    def call_stmt(self):
+        """call_stmt ::= IDENT '(' [arg_list] ')' ';'"""
+        name = self.expect(TokenType.IDENTIFIER).value
+        self.expect(TokenType.LPAREN)
+        args = []
+        if self.current_token.type != TokenType.RPAREN:
+            args = self.arg_list()
+        self.expect(TokenType.RPAREN)
+        self.expect(TokenType.SEMICOLON)
+        return Call(name, args)
+
+    def arg_list(self):
+        """arg_list ::= expr { ',' expr }"""
+        args = [self.expr()]
+        while self.current_token.type == TokenType.COMMA:
+            self.advance()
+            args.append(self.expr())
+        return args
+
+    def return_stmt(self):
+        """return_stmt ::= 'return' expr ';'"""
+        self.expect(TokenType.RETURN)
+        expr = self.expr()
+        self.expect(TokenType.SEMICOLON)
+        return Return(expr)
+
+    def label_stmt(self):
+        """label_stmt ::= IDENT ':'"""
+        name = self.expect(TokenType.IDENTIFIER).value
+        self.expect(TokenType.COLON)
+        return Label(name)
 
     def if_stmt(self):
         """if_stmt ::= 'if' expr 'goto' IDENT ';'"""
@@ -158,7 +236,7 @@ class Parser:
         return left
 
     def factor(self):
-        """factor ::= NUMBER | IDENT | '(' expr ')'"""
+        """factor ::= NUMBER | IDENT | '(' expr ')' | IDENT '(' [arg_list] ')'"""
         if self.current_token.type == TokenType.NUMBER:
             value = self.current_token.value
             self.advance()
@@ -166,8 +244,24 @@ class Parser:
 
         elif self.current_token.type == TokenType.IDENTIFIER:
             name = self.current_token.value
-            self.advance()
-            return Identifier(name)
+            # Lookahead: function call in expression
+            next_tok = (
+                self.tokens[self.position + 1]
+                if self.position + 1 < len(self.tokens)
+                else None
+            )
+            if next_tok and next_tok.type == TokenType.LPAREN:
+                # Parse call expression (no trailing semicolon here)
+                self.advance()  # consume IDENT
+                self.expect(TokenType.LPAREN)
+                args = []
+                if self.current_token.type != TokenType.RPAREN:
+                    args = self.arg_list()
+                self.expect(TokenType.RPAREN)
+                return Call(name, args)
+            else:
+                self.advance()
+                return Identifier(name)
 
         elif self.current_token.type == TokenType.LPAREN:
             self.advance()

@@ -47,6 +47,7 @@ class Lexer:
             (r"=", "ASSIGN"),
             (r"<", "LESS_THAN"),
             (r">", "GREATER_THAN"),
+            (r":", "COLON"),
             (r";", "SEMICOLON"),
             (r",", "COMMA"),
             (r"\{", "LBRACE"),
