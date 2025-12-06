@@ -50,3 +50,9 @@ class RuntimeError(CompilerError):
     """Raised during interpreter execution (division by zero, etc.)."""
 
     pass
+
+
+class CodeGenError(CompilerError):
+    """Raised during assembly code generation."""
+
+    pass

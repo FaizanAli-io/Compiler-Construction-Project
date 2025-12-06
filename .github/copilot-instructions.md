@@ -1,7 +1,7 @@
 # 🚀 Compiler Project – Copilot Instructions
 
 These instructions tell GitHub Copilot **how to assist in building the PatternLang compiler** in Python.
-The compiler must follow the **six standard phases** of compilation, follow a **simple and minimalistic architecture**, and generate **clean, readable, well-commented code**.
+The compiler must follow the **seven standard phases** of compilation, follow a **simple and minimalistic architecture**, and generate **clean, readable, well-commented code**.
 
 ---
 
@@ -14,7 +14,7 @@ Copilot should help generate code that is:
 - Modular
 - Easy to read
 - Easy to demo in a viva
-- Matches compiler theory concepts (lexer → parser → AST → semantic analysis → IR → optimizer → interpreter/codegen)
+- Matches compiler theory concepts (lexer → parser → AST → semantic analysis → IR → optimizer → assembly codegen → interpreter)
 
 PatternLang is a **numerical pattern generation language** with:
 
@@ -56,18 +56,26 @@ patternlang/
     semantic.py
     ir.py
     optimizer.py
-    codegen.py
+    assembler.py
     interpreter.py
     main.py
     utils/
         errors.py
         symbol_table.py
 tests/
-    sample1.pl
-    sample2.pl
+    sample_*.pl
+    conditional_*.pl
     run_tests.py
-COPILOT_INSTRUCTIONS.md
+    test_assembly.py
+outputs/
+    *.asm
+    *.o
+docs/
+    ASSEMBLY_GENERATION.md
+GRAMMAR.md
+DEMO.md
 README.md
+.github/copilot-instructions.md
 ```
 
 Copilot should **never** merge phases into a single file.
@@ -213,12 +221,33 @@ Keep it simple.
 
 ---
 
-## 4.7 Code Generation / Interpreter (`interpreter.py`)
+## 4.7 Assembly Code Generation (`assembler.py`)
 
 Copilot must generate:
 
-- A simple stack-based interpreter **OR**
-- Direct execution of IR
+- x86-64 NASM assembly from TAC
+- Proper stack frame management (rbp, rsp)
+- Register allocation for operations
+- System calls for I/O (printf)
+- Proper exit sequence
+
+Assembly generator should:
+
+- Map TAC instructions to assembly
+- Handle arithmetic (+, -, \*, /)
+- Handle comparisons (==, !=, <, >, <=, >=)
+- Handle jumps and labels
+- Handle print statements (via printf)
+- Store variables on stack with rbp-relative addressing
+
+---
+
+## 4.8 Interpreter (`interpreter.py`)
+
+Copilot must generate:
+
+- A simple stack-based interpreter
+- Direct execution of IR (alternative to assembly)
 
 Interpreter must support:
 
@@ -231,12 +260,13 @@ Interpreter must support:
 
 ---
 
-## 4.8 Command Line Interface (`main.py`)
+## 4.9 Command Line Interface (`main.py`)
 
 Copilot must implement:
 
 ```
-python main.py program.pl
+python main.py program.pl              # Interpret
+python main.py program.pl --compile    # Generate assembly
 ```
 
 Steps:
@@ -247,7 +277,7 @@ Steps:
 4. Semantic check
 5. Convert to IR
 6. Optimize
-7. Interpret / run
+7. Generate assembly (if --compile) OR interpret/run
 
 ---
 
@@ -274,14 +304,14 @@ Use `utils/errors.py`.
 ### ✔ **Do not create unnecessary features**
 
 No floats
-No functions
-No nested scopes
+No nested scopes (except functions)
 No arrays
 No type coercion
 
 ### ✔ **Use Python only**
 
 No external dependencies except `re`.
+Optional external tools: NASM for assembly, GCC for linking.
 
 ---
 
@@ -313,6 +343,10 @@ Inside VS Code you can trigger Copilot with prompts like:
 
 > "Implement constant folding and algebraic simplification."
 
+### **For assembly generator**
+
+> "Generate x86-64 NASM assembly code from three-address code with proper stack management."
+
 ### **For interpreter**
 
 > "Write a simple stack-based interpreter to execute the IR instructions."
@@ -332,7 +366,9 @@ The compiler is complete when:
 - Lexing, parsing, semantic analysis work on at least 3 test programs
 - IR generated and optimized
 - Interpreter runs correctly
+- Assembly generation produces valid x86-64 NASM code
 - Code is clean, modular, commented
+- Tests in `tests/` pass
 - Tests in `tests/` pass
 
 ---

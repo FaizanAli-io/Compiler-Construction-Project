@@ -8,14 +8,15 @@
 
 This project is a fully functional **mini-compiler** for **PatternLang**, a small domain-specific language designed to generate numerical patterns using arithmetic logic, loops, and control structures.
 
-The compiler demonstrates all **six classical phases of compiler construction**:
+The compiler demonstrates all **seven phases of compiler construction**:
 
 1. **Lexical Analysis**
 2. **Syntax Analysis**
 3. **Semantic Analysis**
 4. **Intermediate Code Generation (3AC)**
 5. **Basic Optimization**
-6. **Code Generation / Interpretation**
+6. **Assembly Code Generation**
+7. **Interpretation / Execution**
 
 PatternLang is intentionally minimalistic, making it perfect for learning compiler design while still producing expressive and interesting numerical results such as Fibonacci sequences, factorial growth patterns, custom progressions, and more.
 
@@ -91,9 +92,16 @@ The project is structured according to standard compiler pipeline design:
 - Simple algebraic simplifications
 - Dead-code elimination when possible
 
-### **6. Code Generation / Interpreter**
+### **6. Assembly Code Generation**
+
+- Converts three-address code to x86-64 NASM assembly
+- Generates .asm files that can be assembled into object files
+- Optional: Creates executables with NASM and GCC
+
+### **7. Interpretation / Execution**
 
 - Executes the IR on a simple Python-based virtual machine
+- Alternative to assembly generation for rapid testing
 - Produces the output required by the PatternLang program
 
 ---
@@ -104,25 +112,32 @@ A typical structure for this compiler:
 
 ```
 patternlang/
-    lexer.py
-    tokens.py
-    parser.py
-    ast_nodes.py
-    semantic.py
-    ir.py
-    optimizer.py
-    interpreter.py
-    codegen.py
-    main.py
+    lexer.py              # Lexical analyzer
+    tokens.py             # Token definitions
+    parser.py             # Recursive descent parser
+    ast_nodes.py          # AST node classes
+    semantic.py           # Semantic analyzer
+    ir.py                 # Three-address code generator
+    optimizer.py          # IR optimizer
+    assembler.py          # Assembly code generator (NEW)
+    interpreter.py        # Virtual machine executor
     utils/
-        errors.py
-        symbol_table.py
+        errors.py         # Custom exceptions
+        symbol_table.py   # Symbol table management
 tests/
-    sample1.pl
-    sample2.pl
-    run_tests.py
+    sample_*.pl           # Sample programs (13 tests)
+    conditional_*.pl      # Conditional logic tests
+    run_tests.py          # Interpreter test runner
+    test_assembly.py      # Assembly generation tests
+outputs/
+    *.asm                 # Generated assembly files
+    *.o                   # Object files (if NASM installed)
+docs/
+    ASSEMBLY_GENERATION.md
+main.py
 README.md
-COPILOT_INSTRUCTIONS.md
+GRAMMAR.md
+.github/copilot-instructions.md
 ```
 
 ---
@@ -138,17 +153,27 @@ pip install -r requirements.txt
 Run a PatternLang program:
 
 ```bash
-# Basic execution
-python main.py tests/sample1.pl
+# Basic execution (interpret)
+python main.py tests/sample_fibonacci.pl
 
 # Show all compiler phases (verbose mode)
-python main.py tests/sample1.pl --verbose
+python main.py tests/sample_fibonacci.pl --verbose
+
+# Compile to assembly (NEW)
+python main.py tests/sample_fibonacci.pl --compile
+
+# Compile with specific output path
+python main.py tests/sample_fibonacci.pl -c -o outputs/fib
 ```
 
 Run all test programs:
 
 ```bash
+# Test interpreter
 python tests/run_tests.py
+
+# Test assembly generation
+python tests/test_assembly.py
 ```
 
 ---

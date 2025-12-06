@@ -27,10 +27,10 @@ def run_test(test_file):
         print("-" * 70)
         print("\nOutput:")
         compile_and_run(source_code, verbose=False)
-        print("\n✓ Test passed")
+        print("\n[PASS] Test passed")
         return True
     except Exception as e:
-        print(f"\n✗ Test failed: {e}")
+        print(f"\n[FAIL] Test failed: {e}")
         import traceback
 
         traceback.print_exc()
@@ -64,10 +64,10 @@ def main():
     print(f"Passed: {passed}/{total}")
 
     if passed == total:
-        print("✓ All tests passed!")
+        print("[SUCCESS] All tests passed!")
         sys.exit(0)
     else:
-        print(f"✗ {total - passed} test(s) failed")
+        print(f"[FAILED] {total - passed} test(s) failed")
         sys.exit(1)
 
 

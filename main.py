@@ -2,13 +2,14 @@
 """
 PatternLang Compiler - Main Entry Point
 
-Orchestrates all six phases of compilation:
+Orchestrates all seven phases of compilation:
 1. Lexical Analysis
 2. Syntax Analysis
 3. Semantic Analysis
 4. IR Generation
 5. Optimization
-6. Interpretation/Execution
+6. Code Generation (Assembly)
+7. Interpretation/Execution
 """
 
 import sys
@@ -26,16 +27,22 @@ from patternlang import (
     Optimizer,
     Interpreter,
 )
+from patternlang.assembler import generate_assembly, assemble_to_object, link_executable
 from patternlang.utils.errors import CompilerError
 
 
-def compile_and_run(source_code, verbose=False):
+def compile_and_run(source_code, verbose=False, output_path=None, compile_only=False):
     """
     Compile and execute PatternLang source code.
 
     Args:
         source_code: String containing PatternLang code
         verbose: If True, print intermediate results from each phase
+        output_path: If provided, generate assembly/object files at this path
+        compile_only: If True, generate assembly without executing
+
+    Returns:
+        Tuple of (asm_path, obj_path, exe_path) if compiling, None if interpreting
     """
     try:
         # Phase 1: Lexical Analysis
@@ -113,21 +120,63 @@ def compile_and_run(source_code, verbose=False):
                 print(f"  {instr}")
             print()
 
-        # Phase 6: Interpretation/Execution
-        if verbose:
-            print("=" * 60)
-            print("PHASE 6: EXECUTION")
-            print("=" * 60)
-            print("Output:")
+        # Phase 6: Code Generation (if requested)
+        if output_path or compile_only:
+            if verbose:
+                print("=" * 60)
+                print("PHASE 6: CODE GENERATION (ASSEMBLY)")
+                print("=" * 60)
 
-        interpreter = Interpreter()
-        interpreter.execute(optimized_ir)
+            # Generate assembly file
+            asm_path = output_path or "output.asm"
+            if not asm_path.endswith(".asm"):
+                asm_path = asm_path.replace(".pl", ".asm")
 
-        if verbose:
-            print()
-            print("=" * 60)
-            print("EXECUTION COMPLETE")
-            print("=" * 60)
+            generate_assembly(optimized_ir, asm_path)
+
+            if verbose:
+                print(f"Assembly file generated: {asm_path}")
+
+            # Assemble to object file
+            obj_path = asm_path.replace(".asm", ".o")
+            obj_result = assemble_to_object(asm_path, obj_path)
+
+            if obj_result and verbose:
+                print(f"Object file generated: {obj_path}")
+
+            # Link to executable (optional)
+            exe_path = None
+            if obj_result:
+                exe_path = asm_path.replace(
+                    ".asm", ".exe" if sys.platform == "win32" else ""
+                )
+                exe_result = link_executable(obj_path, exe_path)
+                if exe_result and verbose:
+                    print(f"Executable generated: {exe_path}")
+
+            if verbose:
+                print()
+
+            return (asm_path, obj_result, exe_path)
+
+        # Phase 7: Interpretation/Execution (default mode)
+        if not compile_only:
+            if verbose:
+                print("=" * 60)
+                print("PHASE 7: EXECUTION")
+                print("=" * 60)
+                print("Output:")
+
+            interpreter = Interpreter()
+            interpreter.execute(optimized_ir)
+
+            if verbose:
+                print()
+                print("=" * 60)
+                print("EXECUTION COMPLETE")
+                print("=" * 60)
+
+        return None
 
     except CompilerError as e:
         print(f"Compiler Error: {e}", file=sys.stderr)
@@ -147,9 +196,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py program.pl              # Run program
-  python main.py program.pl --verbose    # Show all compilation phases
-  python main.py --help                  # Show this help message
+  python main.py program.pl                      # Run program (interpret)
+  python main.py program.pl --verbose            # Show all compilation phases
+  python main.py program.pl --compile            # Generate assembly and compile
+  python main.py program.pl -c -o outputs/prog   # Compile to specific output
+  python main.py --help                          # Show this help message
         """,
     )
 
@@ -160,6 +211,20 @@ Examples:
         "--verbose",
         action="store_true",
         help="Show detailed output from each compiler phase",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--compile",
+        action="store_true",
+        help="Generate assembly and object files instead of interpreting",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Output path for assembly file (default: outputs/<filename>.asm)",
     )
 
     args = parser.parse_args()
@@ -180,8 +245,32 @@ Examples:
         print(f"Error reading file: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Determine output path if compiling
+    output_path = None
+    if args.compile or args.output:
+        if args.output:
+            output_path = args.output
+        else:
+            # Default: outputs/<filename>.asm
+            outputs_dir = Path("outputs")
+            outputs_dir.mkdir(exist_ok=True)
+            output_path = str(outputs_dir / source_path.stem) + ".asm"
+
     # Compile and run
-    compile_and_run(source_code, verbose=args.verbose)
+    result = compile_and_run(
+        source_code,
+        verbose=args.verbose,
+        output_path=output_path,
+        compile_only=args.compile,
+    )
+
+    if result and not args.verbose:
+        asm_path, obj_path, exe_path = result
+        print(f"Generated: {asm_path}")
+        if obj_path:
+            print(f"Generated: {obj_path}")
+        if exe_path:
+            print(f"Generated: {exe_path}")
 
 
 if __name__ == "__main__":
