@@ -203,7 +203,7 @@ class Parser:
         return Print(expr)
 
     def expr(self):
-        """expr ::= term { ('+' | '-') term }"""
+        """expr ::= term { ('+' | '-' | '==' | '!=' | '<' | '>' | '<=' | '>=') term }"""
         left = self.term()
 
         while self.current_token.type in [
@@ -224,10 +224,14 @@ class Parser:
         return left
 
     def term(self):
-        """term ::= factor { ('*' | '/') factor }"""
+        """term ::= factor { ('*' | '/' | '%') factor }"""
         left = self.factor()
 
-        while self.current_token.type in [TokenType.MULTIPLY, TokenType.DIVIDE]:
+        while self.current_token.type in [
+            TokenType.MULTIPLY,
+            TokenType.DIVIDE,
+            TokenType.MODULO,
+        ]:
             op = self.current_token.type.name
             self.advance()
             right = self.factor()
@@ -238,7 +242,7 @@ class Parser:
     def factor(self):
         """factor ::= NUMBER | IDENT | '(' expr ')' | IDENT '(' [arg_list] ')'"""
         if self.current_token.type == TokenType.NUMBER:
-            value = self.current_token.value
+            value = float(self.current_token.value)  # Convert to float
             self.advance()
             return Number(value)
 

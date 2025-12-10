@@ -11,7 +11,7 @@ from .utils.errors import SemanticError
 class SemanticAnalyzer:
     """
     Validates the AST and builds a symbol table.
-    Ensures PatternLang's integer-only type system is enforced.
+    Ensures PatternLang's float-only type system is enforced.
     """
 
     def __init__(self):
@@ -53,7 +53,7 @@ class SemanticAnalyzer:
         Ensures variable is not already declared in current scope.
         """
         # Check if already declared
-        if not self.symbol_table.declare(node.name, "int"):
+        if not self.symbol_table.declare(node.name, "float"):
             self.errors.append(
                 SemanticError(f"Variable '{node.name}' already declared in this scope")
             )
@@ -78,7 +78,7 @@ class SemanticAnalyzer:
         self.symbol_table.enter_scope()
 
         # Declare loop variable
-        if not self.symbol_table.declare(node.variable, "int"):
+        if not self.symbol_table.declare(node.variable, "float"):
             self.errors.append(
                 SemanticError(
                     f"Loop variable '{node.variable}' conflicts with existing variable"

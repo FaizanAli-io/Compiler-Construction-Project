@@ -26,23 +26,22 @@ class Optimizer:
         # Apply optimization passes
         self.instructions = self.constant_folding(self.instructions)
         self.instructions = self.algebraic_simplification(self.instructions)
-        self.instructions = self.dead_code_elimination(self.instructions)
 
         return self.instructions
 
     def constant_folding(self, instructions):
         """
         Fold constant expressions.
-        Example: t1 = 3 + 4 → t1 = 7
+        Example: t1 = 3.0 + 4.0 → t1 = 7.0
         """
         optimized = []
 
         for instr in instructions:
-            if instr.op in ["+", "-", "*", "/", "==", "!=", "<", ">", "<=", ">="]:
+            if instr.op in ["+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="]:
                 # Check if both operands are constants
                 if self.is_constant(instr.arg1) and self.is_constant(instr.arg2):
-                    val1 = int(instr.arg1)
-                    val2 = int(instr.arg2)
+                    val1 = float(instr.arg1)
+                    val2 = float(instr.arg2)
 
                     # Compute result
                     result_val = self.compute_op(instr.op, val1, val2)
@@ -71,11 +70,11 @@ class Optimizer:
 
         for instr in instructions:
             if instr.op == "+":
-                if instr.arg2 == "0":
+                if instr.arg2 == "0.0":
                     # x + 0 → x
                     new_instr = IRInstruction("assign", instr.arg1, None, instr.result)
                     optimized.append(new_instr)
-                elif instr.arg1 == "0":
+                elif instr.arg1 == "0.0":
                     # 0 + x → x
                     new_instr = IRInstruction("assign", instr.arg2, None, instr.result)
                     optimized.append(new_instr)
@@ -83,7 +82,7 @@ class Optimizer:
                     optimized.append(instr)
 
             elif instr.op == "-":
-                if instr.arg2 == "0":
+                if instr.arg2 == "0.0":
                     # x - 0 → x
                     new_instr = IRInstruction("assign", instr.arg1, None, instr.result)
                     optimized.append(new_instr)
@@ -91,15 +90,15 @@ class Optimizer:
                     optimized.append(instr)
 
             elif instr.op == "*":
-                if instr.arg1 == "0" or instr.arg2 == "0":
-                    # x * 0 → 0 or 0 * x → 0
-                    new_instr = IRInstruction("assign", "0", None, instr.result)
+                if instr.arg1 == "0.0" or instr.arg2 == "0.0":
+                    # x * 0.0 → 0.0 or 0.0 * x → 0.0
+                    new_instr = IRInstruction("assign", "0.0", None, instr.result)
                     optimized.append(new_instr)
-                elif instr.arg2 == "1":
-                    # x * 1 → x
+                elif instr.arg2 == "1.0":
+                    # x * 1.0 → x
                     new_instr = IRInstruction("assign", instr.arg1, None, instr.result)
                     optimized.append(new_instr)
-                elif instr.arg1 == "1":
+                elif instr.arg1 == "1.0":
                     # 1 * x → x
                     new_instr = IRInstruction("assign", instr.arg2, None, instr.result)
                     optimized.append(new_instr)
@@ -107,7 +106,7 @@ class Optimizer:
                     optimized.append(instr)
 
             elif instr.op == "/":
-                if instr.arg2 == "1":
+                if instr.arg2 == "1.0":
                     # x / 1 → x
                     new_instr = IRInstruction("assign", instr.arg1, None, instr.result)
                     optimized.append(new_instr)
@@ -119,21 +118,10 @@ class Optimizer:
 
         return optimized
 
-    def dead_code_elimination(self, instructions):
-        """
-        Remove unused temporary variables (basic implementation).
-        This is a simplified version - a full implementation would track usage.
-        """
-        # For now, just return instructions as-is
-        # A full implementation would:
-        # 1. Track which temporaries are used
-        # 2. Remove assignments to unused temporaries
-        return instructions
-
     def is_constant(self, value):
         """Check if a value is a numeric constant."""
         try:
-            int(value)
+            float(value)
             return True
         except (ValueError, TypeError):
             return False
@@ -149,18 +137,18 @@ class Optimizer:
         elif op == "/":
             if val2 == 0:
                 raise ValueError("Division by zero in constant folding")
-            return val1 // val2  # Integer division
+            return val1 / val2  # Float division
         elif op == "==":
-            return 1 if val1 == val2 else 0
+            return 1.0 if val1 == val2 else 0.0
         elif op == "!=":
-            return 1 if val1 != val2 else 0
+            return 1.0 if val1 != val2 else 0.0
         elif op == "<":
-            return 1 if val1 < val2 else 0
+            return 1.0 if val1 < val2 else 0.0
         elif op == ">":
-            return 1 if val1 > val2 else 0
+            return 1.0 if val1 > val2 else 0.0
         elif op == "<=":
-            return 1 if val1 <= val2 else 0
+            return 1.0 if val1 <= val2 else 0.0
         elif op == ">=":
-            return 1 if val1 >= val2 else 0
+            return 1.0 if val1 >= val2 else 0.0
         else:
             raise ValueError(f"Unknown operator: {op}")

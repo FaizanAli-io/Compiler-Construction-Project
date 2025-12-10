@@ -4,10 +4,9 @@
 let n = 10;
 
 repeat i in 1..n {
-    let mod = i / 2;
-    let doubled = mod * 2;
-    let is_odd = i - doubled;
-    
+    let mod = i % 2;
+    let is_odd = mod == 1;
+
     if is_odd goto skip;
     print i;
     skip:

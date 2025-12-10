@@ -29,6 +29,7 @@ class TokenType(Enum):
     MINUS = auto()
     MULTIPLY = auto()
     DIVIDE = auto()
+    MODULO = auto()
     ASSIGN = auto()
 
     # Comparison operators

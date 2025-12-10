@@ -51,7 +51,7 @@ class Interpreter:
             value = self.get_value(instr.arg1)
             self.variables[instr.result] = value
 
-        elif instr.op in ["+", "-", "*", "/", "==", "!=", "<", ">", "<=", ">="]:
+        elif instr.op in ["+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="]:
             # result = arg1 op arg2
             val1 = self.get_value(instr.arg1)
             val2 = self.get_value(instr.arg2)
@@ -127,11 +127,11 @@ class Interpreter:
     def get_value(self, operand):
         """
         Get the value of an operand.
-        Returns integer value for constants or variables.
+        Returns float value for constants or variables.
         """
         # Try to parse as constant
         try:
-            return int(operand)
+            return float(operand)
         except (ValueError, TypeError):
             pass
 
@@ -150,7 +150,7 @@ class Interpreter:
             args = self.variables.get("_args", [])
             if 0 <= idx < len(args):
                 return args[idx]
-            return 0
+            return 0.0
         # Undefined variable
         raise RuntimeError(f"Undefined variable: {operand}")
 
@@ -165,18 +165,20 @@ class Interpreter:
         elif op == "/":
             if val2 == 0:
                 raise RuntimeError("Division by zero")
-            return val1 // val2  # Integer division
+            return val1 / val2  # Float division
+        elif op == "%":
+            return val1 % val2
         elif op == "==":
-            return 1 if val1 == val2 else 0
+            return 1.0 if val1 == val2 else 0.0
         elif op == "!=":
-            return 1 if val1 != val2 else 0
+            return 1.0 if val1 != val2 else 0.0
         elif op == "<":
-            return 1 if val1 < val2 else 0
+            return 1.0 if val1 < val2 else 0.0
         elif op == ">":
-            return 1 if val1 > val2 else 0
+            return 1.0 if val1 > val2 else 0.0
         elif op == "<=":
-            return 1 if val1 <= val2 else 0
+            return 1.0 if val1 <= val2 else 0.0
         elif op == ">=":
-            return 1 if val1 >= val2 else 0
+            return 1.0 if val1 >= val2 else 0.0
         else:
             raise RuntimeError(f"Unknown operator: {op}")

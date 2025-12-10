@@ -220,6 +220,7 @@ class IRGenerator:
             "MINUS": "-",
             "MULTIPLY": "*",
             "DIVIDE": "/",
+            "MODULO": "%",
             "EQUAL": "==",
             "NOT_EQUAL": "!=",
             "LESS_THAN": "<",

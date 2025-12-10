@@ -25,7 +25,7 @@ class SymbolTable:
             self.scopes.pop()
             self.current_scope -= 1
 
-    def declare(self, name, var_type="int", value=None):
+    def declare(self, name, var_type="float", value=None):
         """
         Declare a new variable in the current scope.
         Returns True if successful, False if already declared.

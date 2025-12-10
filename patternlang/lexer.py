@@ -35,8 +35,9 @@ class Lexer:
             (r"!=", "NOT_EQUAL"),
             (r"<=", "LESS_EQUAL"),
             (r">=", "GREATER_EQUAL"),
-            # Numbers
-            (r"\d+", "NUMBER"),
+            # Numbers (floats before integers to match 3.14 correctly)
+            (r"\d+\.\d+", "NUMBER"),  # Floating point: 3.14, 0.5
+            (r"\d+", "NUMBER"),  # Integer: 123
             # Identifiers and keywords
             (r"[a-zA-Z_][a-zA-Z0-9_]*", "IDENTIFIER"),
             # Single-character operators and symbols
@@ -44,6 +45,7 @@ class Lexer:
             (r"-", "MINUS"),
             (r"\*", "MULTIPLY"),
             (r"/", "DIVIDE"),
+            (r"%", "MODULO"),
             (r"=", "ASSIGN"),
             (r"<", "LESS_THAN"),
             (r">", "GREATER_THAN"),
@@ -91,7 +93,7 @@ class Lexer:
                         continue
                     elif token_name == "NUMBER":
                         token = Token(
-                            TokenType.NUMBER, int(value), self.line, self.column
+                            TokenType.NUMBER, float(value), self.line, self.column
                         )
                         self.tokens.append(token)
                     elif token_name == "IDENTIFIER":

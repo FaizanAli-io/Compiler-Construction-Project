@@ -68,7 +68,7 @@ class AssemblyGenerator:
         """Emit data section with format strings for printing."""
         self.assembly.append("section .data")
         self.assembly.append(
-            "    fmt_int: db '%d', 10, 0  ; Integer format with newline"
+            "    fmt_float: db '%.6g', 10, 0  ; Float format with newline"
         )
         self.assembly.append("")
 
@@ -108,50 +108,52 @@ class AssemblyGenerator:
             self.assembly.append(f"{instr.result}:")
 
         elif op == "assign":
-            # result = arg1
-            self._load_operand(instr.arg1, "rax")
-            self._store_variable(instr.result, "rax")
+            # result = arg1 (float move)
+            self._load_operand_float(instr.arg1, "xmm0")
+            self._store_variable_float(instr.result, "xmm0")
 
         elif op == "+":
-            self._binary_op(instr, "add")
+            self._binary_op_float(instr, "addsd")
 
         elif op == "-":
-            self._binary_op(instr, "sub")
+            self._binary_op_float(instr, "subsd")
 
         elif op == "*":
-            self._binary_op(instr, "imul")
+            self._binary_op_float(instr, "mulsd")
 
         elif op == "/":
-            self._division(instr)
+            self._division_float(instr)
 
         elif op == "==":
-            self._comparison(instr, "sete")
+            self._comparison_float(instr, "je")
 
         elif op == "!=":
-            self._comparison(instr, "setne")
+            self._comparison_float(instr, "jne")
 
         elif op == "<":
-            self._comparison(instr, "setl")
+            self._comparison_float(instr, "jl")
 
         elif op == ">":
-            self._comparison(instr, "setg")
+            self._comparison_float(instr, "jg")
 
         elif op == "<=":
-            self._comparison(instr, "setle")
+            self._comparison_float(instr, "jle")
 
         elif op == ">=":
-            self._comparison(instr, "setge")
+            self._comparison_float(instr, "jge")
 
         elif op == "goto":
             self.assembly.append(f"    jmp {instr.arg1}")
 
         elif op == "if_false":
-            self._load_operand(instr.arg1, "rax")
-            self.assembly.append(f"    test rax, rax")
-            self.assembly.append(f"    jz {instr.arg2}")
+            # For floats, a zero comparison result is false
+            self._load_operand_float(instr.arg1, "xmm0")
+            self.assembly.append(f"    xorpd xmm1, xmm1")
+            self.assembly.append(f"    comisd xmm0, xmm1")
+            self.assembly.append(f"    je {instr.arg2}")
 
         elif op == "print":
-            self._print_value(instr.arg1)
+            self._print_value_float(instr.arg1)
 
         elif op == "param":
             # For function calls - not implemented yet
@@ -164,91 +166,96 @@ class AssemblyGenerator:
             )
 
         elif op == "return":
-            self._load_operand(instr.arg1, "rax")
+            self._load_operand_float(instr.arg1, "xmm0")
             self.assembly.append(f"    jmp _exit")
 
         else:
             self.assembly.append(f"    ; Unknown operation: {op}")
 
-    def _binary_op(self, instr, asm_op):
-        """Generate assembly for binary arithmetic operations."""
-        # Load first operand into rax
-        self._load_operand(instr.arg1, "rax")
+    def _binary_op_float(self, instr, asm_op):
+        """Generate assembly for binary floating-point operations."""
+        # Load first operand into xmm0
+        self._load_operand_float(instr.arg1, "xmm0")
 
-        # Load second operand into rbx
-        self._load_operand(instr.arg2, "rbx")
+        # Load second operand into xmm1
+        self._load_operand_float(instr.arg2, "xmm1")
 
-        # Perform operation
-        self.assembly.append(f"    {asm_op} rax, rbx")
-
-        # Store result
-        self._store_variable(instr.result, "rax")
-
-    def _division(self, instr):
-        """Generate assembly for division (requires rdx:rax setup)."""
-        # Load dividend into rax
-        self._load_operand(instr.arg1, "rax")
-
-        # Sign extend rax into rdx:rax
-        self.assembly.append(f"    cqo")
-
-        # Load divisor into rbx
-        self._load_operand(instr.arg2, "rbx")
-
-        # Divide rdx:rax by rbx, quotient in rax
-        self.assembly.append(f"    idiv rbx")
+        # Perform operation: xmm0 op= xmm1
+        self.assembly.append(f"    {asm_op} xmm0, xmm1")
 
         # Store result
-        self._store_variable(instr.result, "rax")
+        self._store_variable_float(instr.result, "xmm0")
 
-    def _comparison(self, instr, set_instruction):
-        """Generate assembly for comparison operations."""
+    def _division_float(self, instr):
+        """Generate assembly for floating-point division."""
+        # Load dividend into xmm0
+        self._load_operand_float(instr.arg1, "xmm0")
+
+        # Load divisor into xmm1
+        self._load_operand_float(instr.arg2, "xmm1")
+
+        # Divide xmm0 by xmm1
+        self.assembly.append(f"    divsd xmm0, xmm1")
+
+        # Store result
+        self._store_variable_float(instr.result, "xmm0")
+
+    def _comparison_float(self, instr, jump_instruction):
+        """Generate assembly for floating-point comparison operations."""
         # Load operands
-        self._load_operand(instr.arg1, "rax")
-        self._load_operand(instr.arg2, "rbx")
+        self._load_operand_float(instr.arg1, "xmm0")
+        self._load_operand_float(instr.arg2, "xmm1")
 
         # Compare
-        self.assembly.append(f"    cmp rax, rbx")
+        self.assembly.append(f"    comisd xmm0, xmm1")
 
-        # Set result (0 or 1)
-        self.assembly.append(f"    {set_instruction} al")
-        self.assembly.append(f"    movzx rax, al")
+        # Set result based on comparison
+        # For now, store 1.0 or 0.0 based on comparison
+        # This is simplified; proper implementation would use conditional moves
+        temp_var = instr.result
+        self.assembly.append(f"    movsd xmm0, [rel zero_const]")
+        self.assembly.append(f"    movsd xmm1, [rel one_const]")
+        self.assembly.append(f"    cmovne rax, rbx")
+        self._store_variable_float(instr.result, "xmm0")
 
-        # Store result
-        self._store_variable(instr.result, "rax")
+    def _print_value_float(self, operand):
+        """Generate assembly to print a floating-point value."""
+        # Load value into xmm0 (first fp argument for printf)
+        self._load_operand_float(operand, "xmm0")
 
-    def _print_value(self, operand):
-        """Generate assembly to print an integer value."""
-        # Load value into rsi (second argument for printf)
-        self._load_operand(operand, "rsi")
-
-        # Set up printf call
+        # Set up printf call with float format string
         self.assembly.append(
-            f"    lea rdi, [rel fmt_int]  ; First argument: format string"
+            f"    lea rdi, [rel fmt_float]  ; First argument: format string"
         )
-        self.assembly.append(f"    xor rax, rax            ; No floating-point args")
+        self.assembly.append(f"    mov rax, 1              ; 1 floating-point arg")
         self.assembly.append(f"    push rbp                ; Align stack")
         self.assembly.append(f"    call printf")
         self.assembly.append(f"    pop rbp")
 
-    def _load_operand(self, operand, register):
-        """Load an operand (constant or variable) into a register."""
-        if isinstance(operand, int) or (isinstance(operand, str) and operand.isdigit()):
-            # Immediate value
-            self.assembly.append(f"    mov {register}, {operand}")
-        elif operand in self.variables:
-            # Variable on stack
-            offset = self.variables[operand]
-            self.assembly.append(f"    mov {register}, [rbp - {offset}]")
-        else:
-            # Assume it's a constant or special value
-            self.assembly.append(f"    mov {register}, {operand}")
+    def _load_operand_float(self, operand, register):
+        """Load a floating-point operand into an XMM register."""
+        try:
+            # Try to parse as float constant
+            val = float(operand)
+            # For float constants, we need to load from data section
+            # For now, use movsd with immediate (limited approach)
+            self.assembly.append(f"    mov rax, {int(val * 1e6)}")
+            self.assembly.append(f"    cvtsi2sd {register}, rax")
+        except (ValueError, TypeError):
+            # Variable lookup
+            if operand in self.variables:
+                offset = self.variables[operand]
+                self.assembly.append(f"    movsd {register}, [rbp - {offset}]")
+            else:
+                # Try as integer and convert
+                self.assembly.append(f"    mov rax, {operand}")
+                self.assembly.append(f"    cvtsi2sd {register}, rax")
 
-    def _store_variable(self, var_name, register):
-        """Store register value to a variable on the stack."""
+    def _store_variable_float(self, var_name, register):
+        """Store an XMM register value to a float variable on the stack."""
         if var_name in self.variables:
             offset = self.variables[var_name]
-            self.assembly.append(f"    mov [rbp - {offset}], {register}")
+            self.assembly.append(f"    movsd [rbp - {offset}], {register}")
 
 
 def generate_assembly(ir_instructions, output_path):
